@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "steeleservermod",
+  "version": "${version}",
+  "name": "SteeleServerMod",
+  "description": "Mod for the Steele Minecraft Server",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/steeleservermod/icon.png",
+  "environment": "server",
+  "entrypoints": {
+    "fabric-datagen": [
+      "hsteele.steeleservermod.client.SteeleservermodDataGenerator"
+    ],
+    "main": [
+      "hsteele.steeleservermod.Steeleservermod"
+    ]
+  },
+  "mixins": [
+    "steeleservermod.mixins.json",
+    {
+      "config": "steeleservermod.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
