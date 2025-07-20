@@ -12,6 +12,7 @@ import net.minecraft.text.Text;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 public class RunCommand {
 
@@ -49,7 +50,6 @@ public class RunCommand {
     }
 
     private static int run(CommandContext<ServerCommandSource> context, String scriptName) throws CommandSyntaxException {
-
         ServerCommandSource source = context.getSource();
         File scriptFile = new File(RunFolder, scriptName);
 
@@ -59,21 +59,19 @@ public class RunCommand {
         }
 
         try {
-            ProcessBuilder builder = new ProcessBuilder("/bin/bash", scriptFile.getAbsolutePath());
+            // Start detached process
+            new ProcessBuilder("nohup", "/bin/bash", scriptFile.getAbsolutePath())
+                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .redirectErrorStream(true)
+                    .start();
 
-//            builder.redirectOutput(ProcessBuilder.Redirect.to(new File("/dev/null")));
-//            builder.redirectError(ProcessBuilder.Redirect.to(new File("/dev/null")));
+            source.sendFeedback(() -> Text.literal("Started script (detached): " + scriptName), true);
+            return 1;
 
-            Process process = builder.start();
-            source.sendFeedback(() -> Text.literal("Running script: " + scriptName), true);
-            int exitCode = process.waitFor();
-
-            source.sendFeedback(() -> Text.literal(scriptName + " completed."), true);
-            return exitCode;
-
-        } catch (IOException | InterruptedException e) {
-            source.sendError(Text.literal("Failed to execute script: " + e.getMessage()));
+        } catch (IOException e) {
+            source.sendError(Text.literal("Failed to start script: " + e.getMessage()));
             return -1;
         }
     }
+
 }
