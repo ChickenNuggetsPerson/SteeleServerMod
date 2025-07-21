@@ -4,6 +4,7 @@
   "package": "hsteele.steeleservermod.mixins",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "SleepManagerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

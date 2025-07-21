@@ -12,13 +12,16 @@ import net.minecraft.text.Text;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
 
 public class RunCommand {
 
     public static String RunFolder = "scripts";
+    public static String[] scripts = {
+            "backup.sh",
+            "updateMods.sh"
+    };
 
-    public static void register(CommandDispatcher<net.minecraft.server.command.ServerCommandSource> dispatcher, boolean dedicated) {
+    public static LiteralArgumentBuilder<net.minecraft.server.command.ServerCommandSource> register() {
 
         // Make scripts directory
         File scriptsDir = new File(RunFolder);
@@ -34,11 +37,6 @@ public class RunCommand {
         LiteralArgumentBuilder<net.minecraft.server.command.ServerCommandSource> runCommand = CommandManager.literal("run")
                 .requires(source -> source.hasPermissionLevel(4));
 
-        String[] scripts = {
-                "backup.sh",
-                "updateMods.sh"
-        };
-
         for (String script : scripts) {
             runCommand.then(CommandManager.literal(script)
                     .executes(ctx -> {
@@ -46,7 +44,8 @@ public class RunCommand {
                     }));
         }
 
-        dispatcher.register(runCommand);
+//        dispatcher.register(runCommand);
+        return runCommand;
     }
 
     private static int run(CommandContext<ServerCommandSource> context, String scriptName) throws CommandSyntaxException {
