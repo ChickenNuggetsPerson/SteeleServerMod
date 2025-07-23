@@ -4,6 +4,7 @@ package hsteele.steeleservermod.Commands;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import hsteele.steeleservermod.AFKSystem.AFKCommand;
+import hsteele.steeleservermod.StatisticsBook.StatisticsBookCommand;
 import hsteele.steeleservermod.Steeleservermod;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.server.command.CommandManager;
@@ -22,6 +23,7 @@ public class RegisterCommands {
 
             command.then(RunCommand.register());
             command.then(AFKCommand.register());
+            command.then(StatisticsBookCommand.register());
 
             dispatcher.register(command);
         });
