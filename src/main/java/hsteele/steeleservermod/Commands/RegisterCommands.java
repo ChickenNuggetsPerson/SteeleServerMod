@@ -19,7 +19,7 @@ public class RegisterCommands {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 
             LiteralArgumentBuilder<ServerCommandSource> command = CommandManager.literal("steeleserver")
-                    .requires(source -> source.hasPermissionLevel(4));
+                    .requires(source -> source.hasPermissionLevel(1));
 
             command.then(RunCommand.register());
             command.then(AFKCommand.register());
