@@ -51,16 +51,40 @@ public class StatisticsBookCommand {
 
             LiteralArgumentBuilder<ServerCommandSource> cmd = CommandManager.literal(stat.getPath())
                     .then(CommandManager.literal("north").executes(ctx -> {
-                        return getBook(ctx, stat.getPath(), Direction.NORTH);
+                        try {
+                            return getBook(ctx, stat.getPath(), Direction.NORTH);
+                        } catch (Exception e) {
+                            LOGGER.error(e.toString());
+                            e.printStackTrace();
+                            return -1;
+                        }
                     }))
                     .then(CommandManager.literal("south").executes(ctx -> {
-                        return getBook(ctx, stat.getPath(), Direction.SOUTH);
+                        try {
+                            return getBook(ctx, stat.getPath(), Direction.SOUTH);
+                        } catch (Exception e) {
+                            LOGGER.error(e.toString());
+                            e.printStackTrace();
+                            return -1;
+                        }
                     }))
                     .then(CommandManager.literal("east").executes(ctx -> {
-                        return getBook(ctx, stat.getPath(), Direction.EAST);
+                        try {
+                            return getBook(ctx, stat.getPath(), Direction.EAST);
+                        } catch (Exception e) {
+                            LOGGER.error(e.toString());
+                            e.printStackTrace();
+                            return -1;
+                        }
                     }))
                     .then(CommandManager.literal("west").executes(ctx -> {
-                        return getBook(ctx, stat.getPath(), Direction.WEST);
+                        try {
+                            return getBook(ctx, stat.getPath(), Direction.WEST);
+                        } catch (Exception e) {
+                            LOGGER.error(e.toString());
+                            e.printStackTrace();
+                            return -1;
+                        }
                     }));
 
             statsCommand.then(cmd);
@@ -100,8 +124,8 @@ public class StatisticsBookCommand {
         String str = getStatsString(stat, server);
         ItemStack book = makeBookItem(new String[]{str});
 
-        Vec3d vecPos = context.getSource().getPosition().add(-1, 2, 0);
-        BlockPos pos = new BlockPos((int) vecPos.x, (int) vecPos.y, (int) vecPos.z);
+        Vec3d vecPos = context.getSource().getPosition();
+        BlockPos pos = BlockPos.ofFloored(vecPos).add(0, 2, 0);
 
         BlockState withBook = Blocks.LECTERN
                 .getDefaultState()
@@ -125,10 +149,10 @@ public class StatisticsBookCommand {
                     true
             );
         }
-        ServerPlayerEntity player = context.getSource().getPlayer();
-        if (player != null) {
-            player.giveOrDropStack(book);
-        }
+//        ServerPlayerEntity player = context.getSource().getPlayer();
+//        if (player != null) {
+//            player.giveOrDropStack(book);
+//        }
 
         return 1;
     }
@@ -151,8 +175,9 @@ public class StatisticsBookCommand {
 
             String formatted = Stats.CUSTOM.getOrCreateStat(stat).format(val);
             String name = CachedNames.getCachedName(entry.getKey());
+            if (name.equals("Error Reading Name")) { continue; }
 
-            dispStats.add(new StatEntry(name, val, formatted));
+            dispStats.add(new StatEntry(limitString(name, 10), val, formatted));
         }
 
         StringBuilder builder = new StringBuilder();
@@ -161,9 +186,9 @@ public class StatisticsBookCommand {
 
         dispStats.sort(Comparator.comparingInt(StatEntry::getRawValue).reversed());
         for (StatEntry s : dispStats) {
-            builder.append(s.getName()).append(" ").append(s.getFormattedValue()).append("\n");
+            builder.append(s.getName()).append(": ").append(s.getFormattedValue()).append("\n");
         }
-
+        
         return builder.toString();
     }
     private static ItemStack makeBookItem(String[] pages) {
@@ -189,5 +214,12 @@ public class StatisticsBookCommand {
         book.set(DataComponentTypes.WRITTEN_BOOK_CONTENT, content);
 
         return book;
+    }
+
+    private static String limitString(String str, int limit) {
+        if (str.length() < limit) {
+            return str;
+        }
+        return str.substring(0, limit - 1);
     }
 }

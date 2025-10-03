@@ -97,8 +97,7 @@ public class AFKManager {
 
     public static void addAFK(ServerPlayerEntity player) {
         afkPlayers.add(player.getUuid());
-        MinecraftServer server = player.getServer();
-        assert server != null;
+        MinecraftServer server = player.getEntityWorld().getServer();
         server.getPlayerManager().broadcast(
                 Text.literal(player.getName().getString() + " is now AFK").formatted(Formatting.YELLOW),
                 false
@@ -107,8 +106,7 @@ public class AFKManager {
     }
     public static void removeAFK(ServerPlayerEntity player) {
         afkPlayers.remove(player.getUuid());
-        MinecraftServer server = player.getServer();
-        assert server != null;
+        MinecraftServer server = player.getEntityWorld().getServer();
         server.getPlayerManager().broadcast(
                 Text.literal(player.getName().getString() + " is no longer AFK").formatted(Formatting.YELLOW),
                 false
@@ -128,7 +126,8 @@ public class AFKManager {
 
 
     private static void addAFKPrefix(ServerPlayerEntity player) {
-        Scoreboard scoreboard = player.getScoreboard();
+        Scoreboard scoreboard = player.getEntityWorld().getServer().getScoreboard();
+
         Team team = scoreboard.getTeam("afk");
         // Create team if it does not exist
         if (team == null) {
@@ -144,7 +143,7 @@ public class AFKManager {
             return;
         }
 
-        Scoreboard scoreboard = player.getScoreboard();
+        Scoreboard scoreboard = player.getEntityWorld().getServer().getScoreboard();
         Team team = scoreboard.getTeam("afk");
         if (team != null) {
             scoreboard.removeScoreHolderFromTeam(player.getNameForScoreboard(), team);
