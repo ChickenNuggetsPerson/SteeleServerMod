@@ -2,6 +2,7 @@ package hsteele.steeleservermod;
 
 import hsteele.steeleservermod.AFKSystem.AFKManager;
 import hsteele.steeleservermod.Commands.RegisterCommands;
+import hsteele.steeleservermod.HarvestSystem.HarvestSystem;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ public class Steeleservermod implements ModInitializer {
         // Register Systems
         RegisterCommands.register();
         AFKManager.register();
+        HarvestSystem.register();
 
     }
 }

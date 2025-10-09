@@ -4,6 +4,7 @@ package hsteele.steeleservermod.Commands;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import hsteele.steeleservermod.AFKSystem.AFKCommand;
+import hsteele.steeleservermod.HarvestSystem.HarvestSystemCommand;
 import hsteele.steeleservermod.StatisticsBook.StatisticsBookCommand;
 import hsteele.steeleservermod.Steeleservermod;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -21,9 +22,10 @@ public class RegisterCommands {
             LiteralArgumentBuilder<ServerCommandSource> command = CommandManager.literal("steeleserver")
                     .requires(source -> source.hasPermissionLevel(1));
 
-            command.then(RunCommand.register());
+//            command.then(RunCommand.register());
             command.then(AFKCommand.register());
             command.then(StatisticsBookCommand.register());
+            command.then(HarvestSystemCommand.register());
 
             dispatcher.register(command);
         });

@@ -1,7 +1,6 @@
 package hsteele.steeleservermod.AFKSystem;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -9,7 +8,6 @@ import hsteele.steeleservermod.config.ConfigSystem;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 
 import static net.minecraft.server.command.CommandManager.argument;
 
@@ -20,11 +18,11 @@ public class AFKCommand {
         LiteralArgumentBuilder<net.minecraft.server.command.ServerCommandSource> afkCommand = CommandManager.literal("afk")
                 .requires(source -> source.hasPermissionLevel(4));
 
-        afkCommand.then(CommandManager.literal("setTimeout")
+        afkCommand.then(CommandManager.literal("timeout")
+                .executes(AFKCommand::getTimeout)
                 .then(argument("minutes", IntegerArgumentType.integer(1, 1440)) // 1 min to 24 hours
                         .executes(AFKCommand::setTimeout)
                 ));
-        afkCommand.then(CommandManager.literal("getTimeout").executes(AFKCommand::getTimeout));
 
         return afkCommand;
     }
