@@ -9,6 +9,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleEffect;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -150,22 +151,27 @@ public class ShutdownStickSystem {
         Vec3d playerPos = player.getEntityPos();
 
         double particleDist = 0.75;
-        double angleOffset = (double) System.currentTimeMillis() / 700;
+        double angleOffset = (double) System.currentTimeMillis() / 600;
 
         for (double angle = 0; angle < Math.PI * 2; angle += 0.1) {
 
-            double baseSize = anim(time, 100, 1000);
+            double baseSize = anim(time, 100, 2000) * 2;
             Vec3d basePos = playerPos
-                    .add(Math.cos(angle) * particleDist * baseSize, 0.7, Math.sin(angle) * particleDist * baseSize);
+                    .add(
+                            Math.cos(angle) * particleDist * baseSize,
+                            0.8,
+                            Math.sin(angle) * particleDist * baseSize
+                    );
 
-            world.spawnParticles(p, true, true, basePos.getX(), basePos.getY(), basePos.getZ(), 1, 0, 0, 0, 0);
+            if (Math.sin(angle + angleOffset) > 0.95 ) {
+                world.spawnParticles(c, true, true, basePos.getX(), basePos.getY(), basePos.getZ(), 1, 0, 0, 0, 0);
+            }
 
-
-            double c3Size = anim(time, 100, 2000) * 3;
+            double c3Size = anim(time, 100, 2000) * 1.2 + Math.cos(-angleOffset) * 0.8;
             Vec3d c3 = playerPos
                     .add(
                             Math.cos(angle) * c3Size,
-                            anim(time, 500, 2500) * (Math.sin(((4 * angle)) + angleOffset) * 0.5 + 1),
+                            anim(time, 500, 3000) * (Math.sin(-angleOffset)*0.5 + 0.8),
                             Math.sin(angle) * c3Size
                     );
             world.spawnParticles(w, true, true, c3.getX(), c3.getY(), c3.getZ(), 1, 0, 0, 0, 0);
@@ -191,7 +197,7 @@ public class ShutdownStickSystem {
         if (time < 1000) {
             Vec3d part = explosionStart
                     .add(explosionCenter.subtract(explosionStart).multiply(
-                            anim(time, 0, 1000)
+                            anim(time, 0, 700)
                     ));
 
                     world.spawnParticles(c, true, true, part.getX(), part.getY(), part.getZ(), 10, 0, 0, 0, 0.02);
@@ -199,26 +205,34 @@ public class ShutdownStickSystem {
 
         if (time > 1100 && time < 2400) {
             renderCircle(
-                    p,
-                    explosionCenter,
-                    anim(time, 1100, 2000) * 5,
-                    server.getWorld(explosionWorld.getRegistryKey())
-            );
-        }
-
-        if (time > 1200 && time < 2900) {
-            renderCircle(
                     w,
                     explosionCenter,
-                    anim(time, 1200, 2500) * 5.5,
+                    anim(time, 1100, 2000) * 8,
                     server.getWorld(explosionWorld.getRegistryKey())
             );
         }
 
-        if (time > 2100) {
+        if (time > 2000 && time < 2900) {
+            renderCircle(
+                    ParticleTypes.DRIPPING_OBSIDIAN_TEAR,
+                    explosionCenter,
+                    anim(time, 1200, 2500) * 8.5,
+                    server.getWorld(explosionWorld.getRegistryKey())
+            );
+        }
 
+        if (time > 2600 && time < 3900) {
+            renderCircle(
+                    ParticleTypes.FLAME,
+                    explosionCenter,
+                    8.5,
+                    server.getWorld(explosionWorld.getRegistryKey())
+            );
+        }
+
+
+        if (time > 3700) {
             double spread = 4;
-
             LightningEntity le = new LightningEntity(EntityType.LIGHTNING_BOLT, world);
             le.setPosition(explosionCenter.add(
                     randomInRange(-spread, spread),
@@ -228,8 +242,9 @@ public class ShutdownStickSystem {
             world.spawnEntity(le);
         }
 
-        if (time > 3000) {
+        if (time > 4000) {
             server.stop(false);
+            explosionRunning = false;
         }
 
     }
