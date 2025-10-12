@@ -17,7 +17,7 @@ public class RunCommand {
 
     public static String RunFolder = "scripts";
     public static String[] scripts = {
-            "backup.sh",
+//            "backup.sh",
             "updateMods.sh"
     };
 

@@ -22,7 +22,7 @@ public class RegisterCommands {
             LiteralArgumentBuilder<ServerCommandSource> command = CommandManager.literal("steeleserver")
                     .requires(source -> source.hasPermissionLevel(1));
 
-//            command.then(RunCommand.register());
+            command.then(RunCommand.register());
             command.then(AFKCommand.register());
             command.then(StatisticsBookCommand.register());
             command.then(HarvestSystemCommand.register());
