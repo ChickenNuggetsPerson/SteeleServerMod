@@ -1,5 +1,6 @@
 package hsteele.steeleservermod.ShutdownStickSystem;
 
+import hsteele.steeleservermod.Commands.RunCommand;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.entity.EntityType;
@@ -150,31 +151,19 @@ public class ShutdownStickSystem {
         ServerWorld world = player.getEntityWorld();
         Vec3d playerPos = player.getEntityPos();
 
-        double particleDist = 0.75;
-        double angleOffset = (double) System.currentTimeMillis() / 600;
+        double angleOffset = (double) System.currentTimeMillis() / 400;
 
         for (double angle = 0; angle < Math.PI * 2; angle += 0.1) {
 
-            double baseSize = anim(time, 100, 2000) * 2;
-            Vec3d basePos = playerPos
-                    .add(
-                            Math.cos(angle) * particleDist * baseSize,
-                            0.8,
-                            Math.sin(angle) * particleDist * baseSize
-                    );
-
             if (Math.sin(angle + angleOffset) > 0.95 ) {
+                double baseSize = anim(time, 100, 2000);
+                Vec3d basePos = playerPos.add(
+                        Math.cos(angle) * baseSize,
+                        0.6,
+                        Math.sin(angle) * baseSize
+                );
                 world.spawnParticles(c, true, true, basePos.getX(), basePos.getY(), basePos.getZ(), 1, 0, 0, 0, 0);
             }
-
-            double c3Size = anim(time, 100, 2000) * 1.2 + Math.cos(-angleOffset) * 0.8;
-            Vec3d c3 = playerPos
-                    .add(
-                            Math.cos(angle) * c3Size,
-                            anim(time, 500, 3000) * (Math.sin(-angleOffset)*0.5 + 0.8),
-                            Math.sin(angle) * c3Size
-                    );
-            world.spawnParticles(w, true, true, c3.getX(), c3.getY(), c3.getZ(), 1, 0, 0, 0, 0);
 
         }
     }
@@ -191,6 +180,8 @@ public class ShutdownStickSystem {
         explosionWorld = world;
     }
     private static void renderExplosion(MinecraftServer server) {
+        if (!explosionRunning) { return; }
+
         long time = System.currentTimeMillis() - explosionStartTime;
         ServerWorld world = Objects.requireNonNull(server.getWorld(explosionWorld.getRegistryKey()));
 
@@ -243,8 +234,8 @@ public class ShutdownStickSystem {
         }
 
         if (time > 4000) {
-            server.stop(false);
             explosionRunning = false;
+            RunCommand.runRestartScript();
         }
 
     }

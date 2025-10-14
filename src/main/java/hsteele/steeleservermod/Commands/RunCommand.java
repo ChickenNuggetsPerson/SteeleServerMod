@@ -18,7 +18,8 @@ public class RunCommand {
     public static String RunFolder = "scripts";
     public static String[] scripts = {
 //            "backup.sh",
-            "updateMods.sh"
+            "updateMods.sh",
+            "restartServer.sh"
     };
 
     public static LiteralArgumentBuilder<net.minecraft.server.command.ServerCommandSource> register() {
@@ -44,7 +45,6 @@ public class RunCommand {
                     }));
         }
 
-//        dispatcher.register(runCommand);
         return runCommand;
     }
 
@@ -70,6 +70,23 @@ public class RunCommand {
         } catch (IOException e) {
             source.sendError(Text.literal("Failed to start script: " + e.getMessage()));
             return -1;
+        }
+    }
+
+    public static void runRestartScript() {
+        File scriptFile = new File(RunFolder, "restartServer.sh");
+        if (!scriptFile.exists() || !scriptFile.isFile()) {
+            return;
+        }
+
+        try {
+            // Start detached process
+            new ProcessBuilder("nohup", "/bin/bash", scriptFile.getAbsolutePath())
+                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .redirectErrorStream(true)
+                    .start();
+        } catch (IOException ignored) {
+
         }
     }
 
