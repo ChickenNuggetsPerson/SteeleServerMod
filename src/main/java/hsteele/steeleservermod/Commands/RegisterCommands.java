@@ -7,6 +7,7 @@ import hsteele.steeleservermod.AFKSystem.AFKCommand;
 import hsteele.steeleservermod.HarvestSystem.HarvestSystemCommand;
 import hsteele.steeleservermod.StatisticsBook.StatisticsBookCommand;
 import hsteele.steeleservermod.Steeleservermod;
+import hsteele.steeleservermod.WalkerSystem.WalkerStorage;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -26,6 +27,7 @@ public class RegisterCommands {
             command.then(AFKCommand.register());
             command.then(StatisticsBookCommand.register());
             command.then(HarvestSystemCommand.register());
+            command.then(WalkerStorage.registerCommand());
 
             dispatcher.register(command);
         });

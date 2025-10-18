@@ -49,7 +49,7 @@ public class Walker {
 
         this.createBody();
 
-        Steeleservermod.LOGGER.info("Created Walker");
+        Steeleservermod.LOGGER.info("Created Walker: " + this.player.getName().getString());
     }
 
     public void addLeg(Leg leg) {
@@ -64,9 +64,10 @@ public class Walker {
 
         this.time += 1;
 
-        double cycleTime = 2;
+        double cycleTime = 2.5;
         PlayerInput input = null;
         boolean walking = false;
+        boolean isSeated = false;
 
         this.updateBody();
 
@@ -78,24 +79,29 @@ public class Walker {
 
             input = this.player.getPlayerInput();
             walking = input.backward() || input.forward() || input.left() || input.right();
+            isSeated = true;
         }
 
         this.updateLegBasePos();
         this.updatePrevLegTargets();
-        if (walking) {
-            this.updateWalkInDir(cycleTime, input);
+        if (isSeated) {
+            if (input.jump()) {
+                this.updateJumpLegs();
+            } else if (walking) {
+                this.updateWalkInDir(cycleTime, input);
+            } else {
+                this.updateIdleLegs();
+            }
+
         } else {
             this.updateIdleLegs();
         }
 
-//        System.out.println("POS " + this.legPoses);
-//        System.out.println("TAR " + this.legTargets);
-//        System.out.println("PRE " + this.prevLegTargets);
-
         for (int i = 0; i < legs.size(); i++) { // Move Legs
-            this.moveLegs(i);
-            Leg leg = legs.get(i);
 
+            this.moveLegs(i);
+
+            Leg leg = legs.get(i);
             Solver.solveLegIK(leg, this.legPoses.get(i));
             leg.updateLegDisplayEntities();
         }
@@ -133,6 +139,10 @@ public class Walker {
         Leg leg = legs.get(i);
 
         this.legTargets.set(i, limitVec(leg.basePosition, this.legTargets.get(i), leg.length));
+
+        if (this.pos.distanceTo(this.legPoses.get(i)) > leg.length) {
+            this.legPoses.set(i, this.pos);
+        }
 
         Vec3d target = this.legTargets.get(i);
         Vec3d pos = this.legPoses.get(i);
@@ -177,7 +187,7 @@ public class Walker {
 
     private void updateWalkInDir(double cycleTime, PlayerInput input) {
         double maxWidth = 1.5;
-        double maxHeight = 1.2;
+        double maxHeight = 2.0;
         double maxPush = -0.2;
 
         double groundPercent = 0.5;
@@ -195,7 +205,7 @@ public class Walker {
         boolean isLR = input.left() || input.right();
 
         if (input.sprint()) {
-            cycleTime = cycleTime * 0.5;
+            cycleTime = cycleTime * 0.3;
         }
 
         Vec3d moveVec = new Vec3d(x, 0, z).normalize();
@@ -267,6 +277,15 @@ public class Walker {
             legTargets.set(i, target);
         }
     }
+    private void updateJumpLegs() {
+        for (int i = 0; i < legs.size(); i++) {
+
+            Vec3d target = pos.add(getCircleVec(i, legs.size(), 0.7));
+            target = target.add(0, -3.5, 0);
+
+            legTargets.set(i, target);
+        }
+    }
     private void updateLegBasePos() {
         for (int i = 0; i < legs.size(); i++) {
             legs.get(i).basePosition = this.pos
@@ -275,7 +294,13 @@ public class Walker {
     }
     private void updatePrevLegTargets() {
         for (int i = 0; i < this.legTargets.size(); i++) {
-            this.prevLegTargets.set(i, this.legTargets.get(i));
+            Vec3d target = this.legTargets.get(i);
+            if (Double.isNaN(target.x) || Double.isNaN(target.y) || Double.isNaN(target.z)) {
+                target = this.pos;
+                this.legTargets.set(i, target);
+            }
+
+            this.prevLegTargets.set(i, target);
         }
     }
 
@@ -352,23 +377,30 @@ public class Walker {
     private void updatePhysics() {
         double deltaTime = 1.0 / 20.0;
 
+
         this.pos = pos.add(velocity);
 
         Pair<Vec3d, Vec3d> forceResult = calcLegForces();
 
+        // Add forces to velocity
         Vec3d forces = forceResult.getLeft();
         this.velocity = this.velocity.add(forces);
+        if (this.velocity.length() > 10) {
+            this.velocity = this.velocity.normalize().multiply(10);
+        }
+
 
         Vec3d torque = forceResult.getRight(); // Total torque from forces
         Vec3d inertia = new Vec3d(1, 1, 1); // Moment of inertia for each axis
 
-        // Update angular velocity (Euler integration)
+        // Update angular velocity )
         this.r_velocity = this.r_velocity.add(
                 (torque.x / inertia.x) * deltaTime,
                 (torque.y / inertia.y) * deltaTime,
                 (torque.z / inertia.z) * deltaTime
         );
 
+        // Update rotation
         Quaternionf dq = new Quaternionf(
                 (float)(r_velocity.x * deltaTime * 20),
                 (float)(r_velocity.y * deltaTime * 20),
@@ -378,12 +410,15 @@ public class Walker {
         dq.mul(rotation);
         rotation.add(dq).normalize();
 
+        // Gravity
         this.velocity = this.velocity.add(0, -0.01, 0);
 
+        // Avoid inside clipping
         while (isInside(this.pos)) {
             this.pos = this.pos.add(0, 0.01, 0);
         }
 
+        // Drag
         this.velocity = this.velocity.multiply(
                 0.97,
                 this.velocity.y > 0 ? 0.6 : 0.97,
@@ -397,7 +432,7 @@ public class Walker {
         Vec3d r_forces = new Vec3d(0, 0.0, 0);
 
         // Calc Center of Mass
-        Vec3d COM = pos;
+        Vec3d COM = pos.add(0, -0.4, 0);
 
         // Debug
 //        world.spawnParticles(ParticleTypes.FLAME, COM.getX(), COM.getY(), COM.getZ(), 1, 0, 0, 0, 0);
@@ -426,6 +461,9 @@ public class Walker {
     }
     public Vec3d calculateReactionForce(Vec3d pos, Vec3d target, Vec3d prevTarget) {
         Vec3d deltaPos = target.subtract(prevTarget);
+        if (deltaPos.length() > 1) {
+            deltaPos = new Vec3d(0, 0, 0);
+        }
 
         Vec3d normalForce = pos.subtract(target) // Calc Normal Force
                 .multiply((double) 1 / (double) legs.size()); // Scale by the amt of legs
