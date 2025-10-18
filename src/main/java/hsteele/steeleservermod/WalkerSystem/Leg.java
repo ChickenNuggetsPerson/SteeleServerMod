@@ -86,6 +86,8 @@ public class Leg {
             entities.get(i).setTransformation(transformation);
             entities.get(i).setPosition(start);
             entities.get(i).setBlockState(state);
+            entities.get(i).setTeleportDuration(1);
+            entities.get(i).setInterpolationDuration(1);
         }
 
     }

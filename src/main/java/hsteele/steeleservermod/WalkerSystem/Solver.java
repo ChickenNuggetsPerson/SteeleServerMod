@@ -30,7 +30,7 @@ public class Solver {
             // Apply upward bias for the last joint
             if (i == jointPositions.size() - 2) {
                 Vec3d upwardBias = new Vec3d(0, 1, 0); // Bias direction (upward)
-                double biasWeight = 0.4; // Adjust the weight of the bias (0 = no bias, 1 = full upward)
+                double biasWeight = 0.1; // Adjust the weight of the bias (0 = no bias, 1 = full upward)
                 direction = direction.multiply(1 - biasWeight).add(upwardBias.multiply(biasWeight)).normalize();
             }
 
