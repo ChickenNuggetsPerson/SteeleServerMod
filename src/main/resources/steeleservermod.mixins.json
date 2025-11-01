@@ -4,7 +4,9 @@
   "package": "hsteele.steeleservermod.mixins",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "SleepManagerMixin"
+    "SleepManagerMixin",
+    "ChristmasSystem.ServerWorldMixin",
+    "ChristmasSystem.SnowblockMixin"
   ],
   "injectors": {
     "defaultRequire": 1
