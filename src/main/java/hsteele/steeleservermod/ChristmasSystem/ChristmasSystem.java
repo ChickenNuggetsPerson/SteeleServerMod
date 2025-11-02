@@ -7,12 +7,18 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import hsteele.steeleservermod.config.ConfigData;
 import hsteele.steeleservermod.config.ConfigSystem;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.BiomeKeys;
 
@@ -57,6 +63,13 @@ public class ChristmasSystem {
                     .orElseThrow(() -> new IllegalStateException("Snowy Plains biome not found"));
         });
 
+        ServerTickEvents.END_SERVER_TICK.register((server) -> {
+            if (!shared.overrideWeather()) { return; }
+            for (ServerPlayerEntity player: server.getOverworld().getPlayers()) {
+                snowPlayer(player, server);
+            }
+        });
+
         return christmasCommand;
     }
     private static int setOverrideCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -70,4 +83,12 @@ public class ChristmasSystem {
 
         return 1;
     };
+
+
+    public static void snowPlayer(ServerPlayerEntity player, MinecraftServer server) {
+        if (!player.getEntityWorld().isRaining()) { return; }
+
+        Vec3d pos = player.getEntityPos().add(0, 13, 0);
+        player.getEntityWorld().spawnParticles(ParticleTypes.SNOWFLAKE, true, false, pos.getX(), pos.getY(), pos.getZ(), 60, 10, 5, 10, 0.06);
+    }
 }

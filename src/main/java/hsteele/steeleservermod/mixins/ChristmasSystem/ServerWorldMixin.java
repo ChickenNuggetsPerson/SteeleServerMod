@@ -7,6 +7,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.SnowBlock;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
@@ -29,6 +30,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Executor;
 
 
@@ -51,6 +53,8 @@ public class ServerWorldMixin {
 
         Biome biome = world.getBiome(blockPos).value();
         Biome snowBiome = ChristmasSystem.shared.getSnowBiome().value();
+        BlockState blockState = world.getBlockState(blockPos);
+        BlockState blockStateBottom = world.getBlockState(blockPos2);
 
         // Check if ice can form
         if (biome.canSetIce(world, blockPos2)) {
@@ -66,7 +70,6 @@ public class ServerWorldMixin {
                             snowBiome.canSetSnow(world, blockPos)
                             : biome.canSetSnow(world, blockPos)
             )) {
-                BlockState blockState = world.getBlockState(blockPos);
 
                 if (blockState.isOf(Blocks.SNOW)) {
                     // Increase snow layer height
@@ -89,6 +92,16 @@ public class ServerWorldMixin {
                 blockState3.getBlock().precipitationTick(blockState3, world, blockPos2, precipitation);
             }
         }
+
+        // Break Tall Grass
+        if (world.isRaining() && ChristmasSystem.shared.overrideWeather() && blockState.isOf(Blocks.SHORT_GRASS)) {
+            Random random = new Random();
+            if (random.nextInt() % 100 == 0) {
+                world.breakBlock(blockPos, false);
+            }
+        }
+
+//        world.spawnParticles(ParticleTypes.TOTEM_OF_UNDYING, blockPos.toCenterPos().getX(), blockPos.toCenterPos().getY(), blockPos.toCenterPos().getZ(), 1, 0, 0, 0, 0);
 
         ci.cancel(); // Cancel the original method
     }
