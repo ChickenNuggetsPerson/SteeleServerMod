@@ -4,7 +4,8 @@
   "package": "hsteele.steeleservermod.mixins",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "SleepManagerMixin",
+    "AFKMixins.PhantomSpawnerMixin",
+    "AFKMixins.SleepManagerMixin",
     "ChristmasSystem.ServerWorldMixin",
     "ChristmasSystem.SnowblockMixin"
   ],

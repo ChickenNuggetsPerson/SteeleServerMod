@@ -1,4 +1,4 @@
-package hsteele.steeleservermod.mixins;
+package hsteele.steeleservermod.mixins.AFKMixins;
 
 
 import hsteele.steeleservermod.AFKSystem.AFKManager;
