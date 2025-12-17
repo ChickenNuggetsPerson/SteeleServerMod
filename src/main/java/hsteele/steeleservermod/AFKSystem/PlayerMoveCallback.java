@@ -2,22 +2,22 @@ package hsteele.steeleservermod.AFKSystem;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
 
 public interface PlayerMoveCallback {
     Event<PlayerMoveCallback> EVENT = EventFactory.createArrayBacked(PlayerMoveCallback.class,
             (listeners) -> (player, from, to) -> {
-                ActionResult result = ActionResult.PASS;
+                InteractionResult result = InteractionResult.PASS;
                 for (PlayerMoveCallback listener : listeners) {
                     result = listener.onMove(player, from, to);
-                    if (result != ActionResult.PASS) {
+                    if (result != InteractionResult.PASS) {
                         return result;
                     }
                 }
                 return result;
             });
 
-    ActionResult onMove(ServerPlayerEntity player, BlockPos from, BlockPos to);
+    InteractionResult onMove(ServerPlayer player, BlockPos from, BlockPos to);
 }

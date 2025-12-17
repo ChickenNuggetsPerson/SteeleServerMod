@@ -10,8 +10,8 @@ import hsteele.steeleservermod.StatisticsBook.StatisticsBookCommand;
 import hsteele.steeleservermod.Steeleservermod;
 import hsteele.steeleservermod.WalkerSystem.WalkerStorage;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 
 public class RegisterCommands {
     public static void register() {
@@ -21,8 +21,8 @@ public class RegisterCommands {
         // Register Main Command
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 
-            LiteralArgumentBuilder<ServerCommandSource> command = CommandManager.literal("steeleserver")
-                    .requires(source -> source.hasPermissionLevel(1));
+            LiteralArgumentBuilder<CommandSourceStack> command = Commands.literal("steeleserver")
+                    .requires(Commands.hasPermission(Commands.LEVEL_OWNERS));
 
             command.then(RunCommand.register());
             command.then(AFKCommand.register());

@@ -5,30 +5,28 @@ import com.google.gson.JsonObject;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.LecternBlock;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.LecternBlockEntity;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.WrittenBookContentComponent;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.stat.Stats;
-import net.minecraft.state.property.Properties;
-import net.minecraft.text.RawFilteredPair;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.Filterable;
+import net.minecraft.stats.Stats;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.WrittenBookContent;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LecternBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.LecternBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.phys.Vec3;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.time.LocalDate;
@@ -40,17 +38,17 @@ import static hsteele.steeleservermod.Steeleservermod.LOGGER;
 
 public class StatisticsBookCommand {
 
-    public static LiteralArgumentBuilder<ServerCommandSource> register() {
+    public static LiteralArgumentBuilder<CommandSourceStack> register() {
 
         supportedStats = getStaticIdentifiersFromStats().toArray(new Identifier[0]);
 
-        LiteralArgumentBuilder<ServerCommandSource> statsCommand = CommandManager.literal("stats")
-                .requires(source -> source.hasPermissionLevel(2));
+        LiteralArgumentBuilder<CommandSourceStack> statsCommand = Commands.literal("stats")
+                .requires(Commands.hasPermission(Commands.LEVEL_ADMINS));
 
         for (Identifier stat : supportedStats) {
 
-            LiteralArgumentBuilder<ServerCommandSource> cmd = CommandManager.literal(stat.getPath())
-                    .then(CommandManager.literal("north").executes(ctx -> {
+            LiteralArgumentBuilder<CommandSourceStack> cmd = Commands.literal(stat.getPath())
+                    .then(Commands.literal("north").executes(ctx -> {
                         try {
                             return getBook(ctx, stat.getPath(), Direction.NORTH);
                         } catch (Exception e) {
@@ -59,7 +57,7 @@ public class StatisticsBookCommand {
                             return -1;
                         }
                     }))
-                    .then(CommandManager.literal("south").executes(ctx -> {
+                    .then(Commands.literal("south").executes(ctx -> {
                         try {
                             return getBook(ctx, stat.getPath(), Direction.SOUTH);
                         } catch (Exception e) {
@@ -68,7 +66,7 @@ public class StatisticsBookCommand {
                             return -1;
                         }
                     }))
-                    .then(CommandManager.literal("east").executes(ctx -> {
+                    .then(Commands.literal("east").executes(ctx -> {
                         try {
                             return getBook(ctx, stat.getPath(), Direction.EAST);
                         } catch (Exception e) {
@@ -77,7 +75,7 @@ public class StatisticsBookCommand {
                             return -1;
                         }
                     }))
-                    .then(CommandManager.literal("west").executes(ctx -> {
+                    .then(Commands.literal("west").executes(ctx -> {
                         try {
                             return getBook(ctx, stat.getPath(), Direction.WEST);
                         } catch (Exception e) {
@@ -108,10 +106,10 @@ public class StatisticsBookCommand {
         return identifiers;
     }
 
-    private static int getBook(CommandContext<ServerCommandSource> context, String statName, Direction dir) {
+    private static int getBook(CommandContext<CommandSourceStack> context, String statName, Direction dir) {
 
         MinecraftServer server = context.getSource().getServer();
-        World world = context.getSource().getWorld();
+        Level world = context.getSource().getLevel();
 
         Identifier stat = null; // Get the stat from the arg
         for (Identifier s : supportedStats) {
@@ -124,14 +122,14 @@ public class StatisticsBookCommand {
         String str = getStatsString(stat, server);
         ItemStack book = makeBookItem(new String[]{str});
 
-        Vec3d vecPos = context.getSource().getPosition();
-        BlockPos pos = BlockPos.ofFloored(vecPos).add(0, 2, 0);
+        Vec3 vecPos = context.getSource().getPosition();
+        BlockPos pos = BlockPos.containing(vecPos).offset(0, 2, 0);
 
         BlockState withBook = Blocks.LECTERN
-                .getDefaultState()
-                .with(LecternBlock.HAS_BOOK, true)
-                .with(Properties.HORIZONTAL_FACING, dir);
-        world.setBlockState(pos, withBook);
+                .defaultBlockState()
+                .setValue(LecternBlock.HAS_BOOK, true)
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, dir);
+        world.setBlockAndUpdate(pos, withBook);
 
         BlockEntity blockEntity = world.getBlockEntity(pos);
         if (blockEntity == null) {
@@ -141,11 +139,11 @@ public class StatisticsBookCommand {
 
         if (blockEntity instanceof LecternBlockEntity lectern) {
             lectern.setBook(book);
-            world.updateListeners(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
-            lectern.markDirty();
+            world.sendBlockUpdated(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
+            lectern.setChanged();
 
-            context.getSource().sendFeedback(
-                    () -> Text.literal("Made Lectern at: " + pos),
+            context.getSource().sendSuccess(
+                    () -> Component.literal("Made Lectern at: " + pos),
                     true
             );
         }
@@ -159,8 +157,8 @@ public class StatisticsBookCommand {
 
     private static String getStatsString(Identifier stat, MinecraftServer server) {
         // Force server to save stats
-        for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
-            p.getStatHandler().save();
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            p.getStats().save();
         }
         CachedNames.updateCache(); // Update the name cache
 
@@ -173,7 +171,7 @@ public class StatisticsBookCommand {
             int val = StatReader.getCustomCount(entry.getValue(), stat);
             if (val == 0) { continue; }
 
-            String formatted = Stats.CUSTOM.getOrCreateStat(stat).format(val);
+            String formatted = Stats.CUSTOM.get(stat).format(val);
             String name = CachedNames.getCachedName(entry.getKey());
             if (name.equals("Error Reading Name")) { continue; }
 
@@ -193,7 +191,7 @@ public class StatisticsBookCommand {
     }
     private static ItemStack makeBookItem(String[] pages) {
         // Title and Author
-        RawFilteredPair<String> title = RawFilteredPair.of("Server Stats");
+        Filterable<String> title = Filterable.passThrough("Server Stats");
         String author = "Hayden";
 
 //        LocalDate currentDate = LocalDate.now();
@@ -201,17 +199,17 @@ public class StatisticsBookCommand {
 //        String formattedDate = currentDate.format(formatter);
 
         // Pages
-        List<RawFilteredPair<Text>> bookPages = new ArrayList<>();
+        List<Filterable<Component>> bookPages = new ArrayList<>();
 //        bookPages.add(RawFilteredPair.of(Text.literal("Steele Statistics:\n\n" + formattedDate)));
         for (String page : pages) {
-            bookPages.add(RawFilteredPair.of(Text.literal(page)));
+            bookPages.add(Filterable.passThrough(Component.literal(page)));
         }
 
         int generation = 0;
-        WrittenBookContentComponent content = new WrittenBookContentComponent(title, author, generation, bookPages, false);
+        WrittenBookContent content = new WrittenBookContent(title, author, generation, bookPages, false);
 
         ItemStack book = new ItemStack(Items.WRITTEN_BOOK);
-        book.set(DataComponentTypes.WRITTEN_BOOK_CONTENT, content);
+        book.set(DataComponents.WRITTEN_BOOK_CONTENT, content);
 
         return book;
     }

@@ -2,24 +2,24 @@ package hsteele.steeleservermod.mixins.ChristmasSystem;
 
 
 import hsteele.steeleservermod.ChristmasSystem.ChristmasSystem;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.SnowBlock;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.GameRules;
-import net.minecraft.world.Heightmap;
-import net.minecraft.world.biome.Biome;
+import net.minecraft.world.level.gamerules.GameRules;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Random;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SnowLayerBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 
-@Mixin(ServerWorld.class)
+@Mixin(ServerLevel.class)
 public class ServerWorldMixin {
 
 //    @Inject(at = @At("HEAD"), method = "getPrecipitation*", cancellable = true)
@@ -29,12 +29,12 @@ public class ServerWorldMixin {
 //        }
 //    }
 
-    @Inject(method = "tickIceAndSnow", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "tickPrecipitation", at = @At("HEAD"), cancellable = true)
     public void tickIceAndSnow(BlockPos pos, CallbackInfo ci) {
-        ServerWorld world = (ServerWorld) (Object) this;
+        ServerLevel world = (ServerLevel) (Object) this;
 
-        BlockPos blockPos = world.getTopPosition(Heightmap.Type.MOTION_BLOCKING, pos);
-        BlockPos blockPos2 = blockPos.down();
+        BlockPos blockPos = world.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
+        BlockPos blockPos2 = blockPos.below();
 
         Biome biome = world.getBiome(blockPos).value();
         Biome snowBiome = ChristmasSystem.shared.getSnowBiome().value();
@@ -42,47 +42,47 @@ public class ServerWorldMixin {
         BlockState blockStateBottom = world.getBlockState(blockPos2);
 
         // Check if ice can form
-        if (biome.canSetIce(world, blockPos2)) {
-            world.setBlockState(blockPos2, Blocks.ICE.getDefaultState());
+        if (biome.shouldFreeze(world, blockPos2)) {
+            world.setBlockAndUpdate(blockPos2, Blocks.ICE.defaultBlockState());
         }
 
         // Check if it's raining (snowing in cold biomes)
         if (world.isRaining()) {
-            int maxSnowHeight = world.getGameRules().getInt(GameRules.SNOW_ACCUMULATION_HEIGHT);
+            int maxSnowHeight = world.getGameRules().get(GameRules.MAX_SNOW_ACCUMULATION_HEIGHT);
 
             if (maxSnowHeight > 0 && (
                     ChristmasSystem.shared.overrideWeather() ?
-                            snowBiome.canSetSnow(world, blockPos)
-                            : biome.canSetSnow(world, blockPos)
+                            snowBiome.shouldSnow(world, blockPos)
+                            : biome.shouldSnow(world, blockPos)
             )) {
 
-                if (blockState.isOf(Blocks.SNOW)) {
+                if (blockState.is(Blocks.SNOW)) {
                     // Increase snow layer height
-                    int currentLayers = blockState.get(SnowBlock.LAYERS);
+                    int currentLayers = blockState.getValue(SnowLayerBlock.LAYERS);
                     if (currentLayers < Math.min(maxSnowHeight, 8)) {
-                        BlockState newState = blockState.with(SnowBlock.LAYERS, currentLayers + 1);
-                        Block.pushEntitiesUpBeforeBlockChange(blockState, newState, world, blockPos);
-                        world.setBlockState(blockPos, newState);
+                        BlockState newState = blockState.setValue(SnowLayerBlock.LAYERS, currentLayers + 1);
+                        Block.pushEntitiesUp(blockState, newState, world, blockPos);
+                        world.setBlockAndUpdate(blockPos, newState);
                     }
                 } else {
                     // Place new snow layer
-                    world.setBlockState(blockPos, Blocks.SNOW.getDefaultState());
+                    world.setBlockAndUpdate(blockPos, Blocks.SNOW.defaultBlockState());
                 }
             }
 
             // Handle precipitation effects
-            Biome.Precipitation precipitation = biome.getPrecipitation(blockPos2, world.getSeaLevel());
+            Biome.Precipitation precipitation = biome.getPrecipitationAt(blockPos2, world.getSeaLevel());
             if (precipitation != Biome.Precipitation.NONE) {
                 BlockState blockState3 = world.getBlockState(blockPos2);
-                blockState3.getBlock().precipitationTick(blockState3, world, blockPos2, precipitation);
+                blockState3.getBlock().handlePrecipitation(blockState3, world, blockPos2, precipitation);
             }
         }
 
         // Break Tall Grass
-        if (world.isRaining() && ChristmasSystem.shared.overrideWeather() && blockState.isOf(Blocks.SHORT_GRASS)) {
+        if (world.isRaining() && ChristmasSystem.shared.overrideWeather() && blockState.is(Blocks.SHORT_GRASS)) {
             Random random = new Random();
             if (random.nextInt() % 100 == 0) {
-                world.breakBlock(blockPos, false);
+                world.destroyBlock(blockPos, false);
             }
         }
 

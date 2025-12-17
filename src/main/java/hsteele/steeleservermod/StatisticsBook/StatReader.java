@@ -3,9 +3,8 @@ package hsteele.steeleservermod.StatisticsBook;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.Identifier;
-
 import java.io.File;
 import java.io.FileReader;
 import java.util.*;

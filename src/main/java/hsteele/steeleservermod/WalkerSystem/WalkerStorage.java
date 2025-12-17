@@ -5,17 +5,16 @@ import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Items;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Vec3d;
-
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,17 +27,17 @@ public class WalkerStorage {
 
             if (isHoldingSpawner(player)) {
 
-                ServerPlayerEntity p = world.getServer().getPlayerManager().getPlayer(player.getUuid());
+                ServerPlayer p = world.getServer().getPlayerList().getPlayer(player.getUUID());
                 if (p == null) {
-                    return ActionResult.PASS;
+                    return InteractionResult.PASS;
                 }
 
-                HitResult result = player.raycast(10, 1.0f, false);
-                Vec3d pos = result.getPos();
+                HitResult result = player.pick(10, 1.0f, false);
+                Vec3 pos = result.getLocation();
 
                 List<Double> segmentLengths = new ArrayList<>();
 
-                Walker walker = new Walker(pos, p, world.getServer().getWorld(world.getRegistryKey()));
+                Walker walker = new Walker(pos, p, world.getServer().getLevel(world.dimension()));
 
                 segmentLengths.add(0.8);
                 segmentLengths.add(1.6);
@@ -51,20 +50,20 @@ public class WalkerStorage {
 
                 WalkerStorage.SHARED.addWalker(walker);
 
-                return ActionResult.SUCCESS;
+                return InteractionResult.SUCCESS;
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
 
         ServerTickEvents.START_WORLD_TICK.register(world -> {
             WalkerStorage.SHARED.tick();
 
-            List<ServerPlayerEntity> players = world.getPlayers();
-            for (ServerPlayerEntity player: players) {
+            List<ServerPlayer> players = world.players();
+            for (ServerPlayer player: players) {
                 if (isHoldingSpawner(player)) {
-                    Vec3d pos = player.raycast(10, 1.0f, false).getPos();
-                    world.spawnParticles(ParticleTypes.END_ROD, pos.getX(), pos.getY() + 0.1, pos.getZ(), 1, 0, 0, 0, 0);
+                    Vec3 pos = player.pick(10, 1.0f, false).getLocation();
+                    world.sendParticles(ParticleTypes.END_ROD, pos.x(), pos.y() + 0.1, pos.z(), 1, 0, 0, 0, 0);
                 }
             }
         });
@@ -74,22 +73,22 @@ public class WalkerStorage {
         });
     }
 
-    public static LiteralArgumentBuilder<ServerCommandSource> registerCommand() {
+    public static LiteralArgumentBuilder<CommandSourceStack> registerCommand() {
 
-        LiteralArgumentBuilder<net.minecraft.server.command.ServerCommandSource> walkerCommand = CommandManager.literal("walker")
-                .requires(source -> source.hasPermissionLevel(4));
+        LiteralArgumentBuilder<net.minecraft.commands.CommandSourceStack> walkerCommand = Commands.literal("walker")
+                .requires(Commands.hasPermission(Commands.LEVEL_OWNERS));
 
-        walkerCommand.then(CommandManager.literal("killAll")
+        walkerCommand.then(Commands.literal("killAll")
                 .executes(WalkerStorage::killAll)
         );
 
         return walkerCommand;
     }
 
-    private static int killAll(CommandContext<ServerCommandSource> context) {
+    private static int killAll(CommandContext<CommandSourceStack> context) {
         WalkerStorage.SHARED.killAll();
-        context.getSource().sendFeedback(
-                () -> Text.literal("Killed all walkers"),
+        context.getSource().sendSuccess(
+                () -> Component.literal("Killed all walkers"),
                 true
         );
         return 1;
@@ -102,9 +101,9 @@ public class WalkerStorage {
         }
     }
 
-    private static boolean isHoldingSpawner(PlayerEntity player) {
-        if (player.getStackInHand(player.getActiveHand()).getItem() != Items.AMETHYST_SHARD) { return false; }
-        Text name = player.getStackInHand(player.getActiveHand()).getCustomName();
+    private static boolean isHoldingSpawner(Player player) {
+        if (player.getItemInHand(player.getUsedItemHand()).getItem() != Items.AMETHYST_SHARD) { return false; }
+        Component name = player.getItemInHand(player.getUsedItemHand()).getCustomName();
         if (name == null) { return false; }
         return name.getString().equals("Walker");
     }

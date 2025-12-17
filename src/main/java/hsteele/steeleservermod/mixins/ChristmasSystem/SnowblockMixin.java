@@ -2,28 +2,28 @@ package hsteele.steeleservermod.mixins.ChristmasSystem;
 
 
 import hsteele.steeleservermod.ChristmasSystem.ChristmasSystem;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.SnowBlock;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.SnowLayerBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 
-@Mixin(SnowBlock.class)
+@Mixin(SnowLayerBlock.class)
 public class SnowblockMixin {
 
     @Inject(at = @At("TAIL"), method = "randomTick*")
-    protected void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random, CallbackInfo ci) {
+    protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random, CallbackInfo ci) {
         if (ChristmasSystem.shared.overrideWeather()) { return; }
         if (world.isRaining()) { return; }
 
-        float temperature = world.getBiome(pos).value().getTemperature();
+        float temperature = world.getBiome(pos).value().getBaseTemperature();
         if (temperature >= 0.15F) {
-            world.breakBlock(pos, false); // melt + drop
+            world.destroyBlock(pos, false); // melt + drop
         }
     }
 }

@@ -6,12 +6,11 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import hsteele.steeleservermod.Steeleservermod;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
-
 import java.io.File;
 import java.io.IOException;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 
 public class RunCommand {
 
@@ -22,7 +21,7 @@ public class RunCommand {
             "restartServer.sh"
     };
 
-    public static LiteralArgumentBuilder<net.minecraft.server.command.ServerCommandSource> register() {
+    public static LiteralArgumentBuilder<net.minecraft.commands.CommandSourceStack> register() {
 
         // Make scripts directory
         File scriptsDir = new File(RunFolder);
@@ -35,11 +34,11 @@ public class RunCommand {
             }
         }
 
-        LiteralArgumentBuilder<net.minecraft.server.command.ServerCommandSource> runCommand = CommandManager.literal("run")
-                .requires(source -> source.hasPermissionLevel(4));
+        LiteralArgumentBuilder<net.minecraft.commands.CommandSourceStack> runCommand = Commands.literal("run")
+                .requires(Commands.hasPermission(Commands.LEVEL_OWNERS));
 
         for (String script : scripts) {
-            runCommand.then(CommandManager.literal(script)
+            runCommand.then(Commands.literal(script)
                     .executes(ctx -> {
                         return run(ctx, script);
                     }));
@@ -48,12 +47,12 @@ public class RunCommand {
         return runCommand;
     }
 
-    private static int run(CommandContext<ServerCommandSource> context, String scriptName) throws CommandSyntaxException {
-        ServerCommandSource source = context.getSource();
+    private static int run(CommandContext<CommandSourceStack> context, String scriptName) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
         File scriptFile = new File(RunFolder, scriptName);
 
         if (!scriptFile.exists() || !scriptFile.isFile()) {
-            source.sendError(Text.literal("Script not found: " + scriptFile.getPath()));
+            source.sendFailure(Component.literal("Script not found: " + scriptFile.getPath()));
             return 0;
         }
 
@@ -64,11 +63,11 @@ public class RunCommand {
                     .redirectErrorStream(true)
                     .start();
 
-            source.sendFeedback(() -> Text.literal("Started script (detached): " + scriptName), true);
+            source.sendSuccess(() -> Component.literal("Started script (detached): " + scriptName), true);
             return 1;
 
         } catch (IOException e) {
-            source.sendError(Text.literal("Failed to start script: " + e.getMessage()));
+            source.sendFailure(Component.literal("Failed to start script: " + e.getMessage()));
             return -1;
         }
     }

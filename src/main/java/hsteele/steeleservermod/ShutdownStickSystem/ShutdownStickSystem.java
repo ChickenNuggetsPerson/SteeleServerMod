@@ -3,24 +3,23 @@ package hsteele.steeleservermod.ShutdownStickSystem;
 import hsteele.steeleservermod.Commands.RunCommand;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LightningEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.particle.DustParticleEffect;
-import net.minecraft.particle.ParticleEffect;
-import net.minecraft.particle.ParticleTypes;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LightningBolt;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import java.util.Objects;
 
 
@@ -28,18 +27,18 @@ public class ShutdownStickSystem {
 
     private static final String stickName = "SHUTDOWN";
 
-    private static final DustParticleEffect c = new DustParticleEffect(15221045, 1.0f);
-    private static final DustParticleEffect p = new DustParticleEffect(6043112, 0.6f);
-    private static final DustParticleEffect w = new DustParticleEffect(16777215, 0.6f);
+    private static final DustParticleOptions c = new DustParticleOptions(15221045, 1.0f);
+    private static final DustParticleOptions p = new DustParticleOptions(6043112, 0.6f);
+    private static final DustParticleOptions w = new DustParticleOptions(16777215, 0.6f);
 
     private static boolean running = false;
     private static long startTime = 0;
 
     private static boolean explosionRunning = false;
     private static long explosionStartTime = 0;
-    private static Vec3d explosionStart = new Vec3d(0, 200, 0);
-    private static Vec3d explosionCenter = new Vec3d(0, 200, 0);
-    private static World explosionWorld = null;
+    private static Vec3 explosionStart = new Vec3(0, 200, 0);
+    private static Vec3 explosionCenter = new Vec3(0, 200, 0);
+    private static Level explosionWorld = null;
 
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(ShutdownStickSystem::tick);
@@ -47,17 +46,16 @@ public class ShutdownStickSystem {
 
             if (isHoldingStick(player)) {
                 stickClicked(player, world, hand);
-                return ActionResult.SUCCESS;
+                return InteractionResult.SUCCESS;
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
     }
 
     private static void tick(MinecraftServer server) {
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            if (player.getPermissionLevel() != 4) { continue; }
-            if (!player.getUuidAsString().equals("b655d895-9d38-44c6-b7c8-1b2df1db69b0")) { continue; }
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (!player.getStringUUID().equals("b655d895-9d38-44c6-b7c8-1b2df1db69b0")) { continue; }
             if (!isHoldingStick((player))) {
                 running = false;
                 continue;
@@ -95,19 +93,19 @@ public class ShutdownStickSystem {
         return min + (range * Math.random());
     }
 
-    private static boolean isHoldingStick(ServerPlayerEntity player) {
-        ItemStack stack = player.getStackInHand(player.getActiveHand());
+    private static boolean isHoldingStick(ServerPlayer player) {
+        ItemStack stack = player.getItemInHand(player.getUsedItemHand());
         if (stack.getItem() != Items.STICK) { return false; }
-        Text name = stack.getCustomName();
+        Component name = stack.getCustomName();
         if (name != null) {
             return name.getString().equals(stickName);
         }
         return false;
     }
-    private static boolean isHoldingStick(PlayerEntity player) {
-        ItemStack stack = player.getStackInHand(player.getActiveHand());
+    private static boolean isHoldingStick(Player player) {
+        ItemStack stack = player.getItemInHand(player.getUsedItemHand());
         if (stack.getItem() != Items.STICK) { return false; }
-        Text name = stack.getCustomName();
+        Component name = stack.getCustomName();
         if (name != null) {
             return name.getString().equals(stickName);
         }
@@ -115,27 +113,27 @@ public class ShutdownStickSystem {
     }
 
 
-    private static <T extends ParticleEffect> void raycastParticle(T parameters, Vec3d startPos, Vec3d endPos, ServerWorld world) {
+    private static <T extends ParticleOptions> void raycastParticle(T parameters, Vec3 startPos, Vec3 endPos, ServerLevel world) {
         double dist = startPos.distanceTo(endPos);
-        Vec3d dir = endPos.subtract(startPos).normalize();
+        Vec3 dir = endPos.subtract(startPos).normalize();
         int steps = 100;
 
         for (double i = 0; i < steps; i++) {
-            Vec3d pos = startPos.add(dir.multiply(dist * (i / steps)));
-            world.spawnParticles(parameters, true, true, pos.getX(), pos.getY(), pos.getZ(), 10, 0, 0, 0, 0.02);
+            Vec3 pos = startPos.add(dir.scale(dist * (i / steps)));
+            world.sendParticles(parameters, true, true, pos.x(), pos.y(), pos.z(), 10, 0, 0, 0, 0.02);
         }
     }
-    private static <T extends ParticleEffect> void renderCircle(T parameters, Vec3d center, double radius, ServerWorld world) {
+    private static <T extends ParticleOptions> void renderCircle(T parameters, Vec3 center, double radius, ServerLevel world) {
 
         for (double h = -Math.PI / 2; h < Math.PI/2; h += 0.1) {
             for (double angle = 0; angle < Math.PI * 2; angle += 0.1) {
 
                 double r = radius * Math.cos(h);
-                Vec3d position = center
+                Vec3 position = center
                         .add(0, Math.sin(h) * radius, 0)
                         .add(Math.sin(angle) * r, 0, Math.cos(angle) * r);
 
-                world.spawnParticles(parameters, true, true, position.getX(), position.getY(), position.getZ(), 1, 0, 0, 0, 0);
+                world.sendParticles(parameters, true, true, position.x(), position.y(), position.z(), 1, 0, 0, 0, 0);
 
             }
         }
@@ -143,13 +141,13 @@ public class ShutdownStickSystem {
     }
 
 
-    private static void playerHoldingTick(ServerPlayerEntity player) {
+    private static void playerHoldingTick(ServerPlayer player) {
         if (explosionRunning) { return; }
 
         long time = System.currentTimeMillis() - startTime;
 
-        ServerWorld world = player.getEntityWorld();
-        Vec3d playerPos = player.getEntityPos();
+        ServerLevel world = player.level();
+        Vec3 playerPos = player.position();
 
         double angleOffset = (double) System.currentTimeMillis() / 400;
 
@@ -157,41 +155,41 @@ public class ShutdownStickSystem {
 
             if (Math.sin(angle + angleOffset) > 0.95 ) {
                 double baseSize = anim(time, 100, 2000);
-                Vec3d basePos = playerPos.add(
+                Vec3 basePos = playerPos.add(
                         Math.cos(angle) * baseSize,
                         0.6,
                         Math.sin(angle) * baseSize
                 );
-                world.spawnParticles(c, true, true, basePos.getX(), basePos.getY(), basePos.getZ(), 1, 0, 0, 0, 0);
+                world.sendParticles(c, true, true, basePos.x(), basePos.y(), basePos.z(), 1, 0, 0, 0, 0);
             }
 
         }
     }
 
 
-    private static void stickClicked(PlayerEntity player, World world, Hand hand) {
-        Vec3d startPos = player.raycast(1, 1, false).getPos();
-        HitResult result = player.raycast(30, 1, false);
+    private static void stickClicked(Player player, Level world, InteractionHand hand) {
+        Vec3 startPos = player.pick(1, 1, false).getLocation();
+        HitResult result = player.pick(30, 1, false);
 
         explosionRunning = true;
         explosionStartTime = System.currentTimeMillis();
         explosionStart = startPos;
-        explosionCenter = result.getPos();
+        explosionCenter = result.getLocation();
         explosionWorld = world;
     }
     private static void renderExplosion(MinecraftServer server) {
         if (!explosionRunning) { return; }
 
         long time = System.currentTimeMillis() - explosionStartTime;
-        ServerWorld world = Objects.requireNonNull(server.getWorld(explosionWorld.getRegistryKey()));
+        ServerLevel world = Objects.requireNonNull(server.getLevel(explosionWorld.dimension()));
 
         if (time < 1000) {
-            Vec3d part = explosionStart
-                    .add(explosionCenter.subtract(explosionStart).multiply(
+            Vec3 part = explosionStart
+                    .add(explosionCenter.subtract(explosionStart).scale(
                             anim(time, 0, 700)
                     ));
 
-                    world.spawnParticles(c, true, true, part.getX(), part.getY(), part.getZ(), 10, 0, 0, 0, 0.02);
+                    world.sendParticles(c, true, true, part.x(), part.y(), part.z(), 10, 0, 0, 0, 0.02);
         }
 
         if (time > 1100 && time < 2400) {
@@ -199,7 +197,7 @@ public class ShutdownStickSystem {
                     w,
                     explosionCenter,
                     anim(time, 1100, 2000) * 8,
-                    server.getWorld(explosionWorld.getRegistryKey())
+                    server.getLevel(explosionWorld.dimension())
             );
         }
 
@@ -208,7 +206,7 @@ public class ShutdownStickSystem {
                     ParticleTypes.DRIPPING_OBSIDIAN_TEAR,
                     explosionCenter,
                     anim(time, 1200, 2500) * 8.5,
-                    server.getWorld(explosionWorld.getRegistryKey())
+                    server.getLevel(explosionWorld.dimension())
             );
         }
 
@@ -217,20 +215,20 @@ public class ShutdownStickSystem {
                     ParticleTypes.FLAME,
                     explosionCenter,
                     8.5,
-                    server.getWorld(explosionWorld.getRegistryKey())
+                    server.getLevel(explosionWorld.dimension())
             );
         }
 
 
         if (time > 3700) {
             double spread = 4;
-            LightningEntity le = new LightningEntity(EntityType.LIGHTNING_BOLT, world);
-            le.setPosition(explosionCenter.add(
+            LightningBolt le = new LightningBolt(EntityType.LIGHTNING_BOLT, world);
+            le.setPos(explosionCenter.add(
                     randomInRange(-spread, spread),
                     randomInRange(-spread, spread),
                     randomInRange(-spread, spread)
             ));
-            world.spawnEntity(le);
+            world.addFreshEntity(le);
         }
 
         if (time > 4000) {

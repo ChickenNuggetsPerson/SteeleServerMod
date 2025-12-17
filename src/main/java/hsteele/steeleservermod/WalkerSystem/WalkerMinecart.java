@@ -1,24 +1,24 @@
 package hsteele.steeleservermod.WalkerSystem;
 
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.vehicle.MinecartEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.vehicle.minecart.Minecart;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 
-public class WalkerMinecart extends MinecartEntity {
-    public WalkerMinecart(EntityType<?> entityType, World world) {
+public class WalkerMinecart extends Minecart {
+    public WalkerMinecart(EntityType<?> entityType, Level world) {
         super(entityType, world);
     }
 
     @Override
-    public ItemStack getPickBlockStack() {
-        return Items.AIR.getDefaultStack();
+    public ItemStack getPickResult() {
+        return Items.AIR.getDefaultInstance();
     }
 
     @Override
-    protected Item asItem() {
+    protected Item getDropItem() {
         return Items.AIR;
     }
 }

@@ -5,20 +5,20 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import hsteele.steeleservermod.config.ConfigSystem;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 
-import static net.minecraft.server.command.CommandManager.argument;
+import static net.minecraft.commands.Commands.argument;
 
 public class HarvestSystemCommand {
 
-    public static LiteralArgumentBuilder<ServerCommandSource> register() {
+    public static LiteralArgumentBuilder<CommandSourceStack> register() {
 
-        LiteralArgumentBuilder<net.minecraft.server.command.ServerCommandSource> harvestCommand = CommandManager.literal("harvester")
-                .requires(source -> source.hasPermissionLevel(4));
+        LiteralArgumentBuilder<net.minecraft.commands.CommandSourceStack> harvestCommand = Commands.literal("harvester")
+                .requires(Commands.hasPermission(Commands.LEVEL_OWNERS));
 
-        harvestCommand.then(CommandManager.literal("radius")
+        harvestCommand.then(Commands.literal("radius")
                 .executes(HarvestSystemCommand::getRadius)
                 .then(argument("radius", IntegerArgumentType.integer(1, 50)) // 0 to 50
                         .executes(HarvestSystemCommand::setRadius)
@@ -27,20 +27,20 @@ public class HarvestSystemCommand {
         return harvestCommand;
     }
 
-    private static int getRadius(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int getRadius(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         int radius = ConfigSystem.get().harvestSize;
-        context.getSource().sendFeedback(
-                () -> Text.literal("Harvest Radius: " + radius + " blocks"),
+        context.getSource().sendSuccess(
+                () -> Component.literal("Harvest Radius: " + radius + " blocks"),
                 true
         );
         return 1;
     }
-    private static int setRadius(CommandContext<ServerCommandSource> context) throws  CommandSyntaxException {
+    private static int setRadius(CommandContext<CommandSourceStack> context) throws  CommandSyntaxException {
         int radius = IntegerArgumentType.getInteger(context, "radius");
         HarvestSystem.setRadius(radius);
 
-        context.getSource().sendFeedback(
-                () -> Text.literal("Harvest radius set to " + radius + " blocks."),
+        context.getSource().sendSuccess(
+                () -> Component.literal("Harvest radius set to " + radius + " blocks."),
                 true
         );
 

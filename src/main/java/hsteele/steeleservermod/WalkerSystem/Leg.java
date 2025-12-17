@@ -1,28 +1,27 @@
 package hsteele.steeleservermod.WalkerSystem;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.decoration.DisplayEntity;
-import net.minecraft.util.math.AffineTransformation;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-
+import com.mojang.math.Transformation;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.world.entity.Display;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 public class Leg {
 
-    public Vec3d basePosition; // The root (e.g., hip) position of the leg
-    public Vec3d targetPosition; // The target position for the end effector (e.g., foot)
+    public Vec3 basePosition; // The root (e.g., hip) position of the leg
+    public Vec3 targetPosition; // The target position for the end effector (e.g., foot)
     public List<Double> segmentLengths; // Lengths of each limb segment
-    public List<Vec3d> jointPositions; // Calculated positions of the joints
-    public List<DisplayEntity.BlockDisplayEntity> entities;
+    public List<Vec3> jointPositions; // Calculated positions of the joints
+    public List<Display.BlockDisplay> entities;
     public double length = 0.0;
 
-    public Leg(Vec3d basePosition, List<Double> segmentLengths, World world) {
+    public Leg(Vec3 basePosition, List<Double> segmentLengths, Level world) {
         this.basePosition = basePosition;
         this.segmentLengths = segmentLengths;
         this.jointPositions = new ArrayList<>(segmentLengths.size() + 1);
@@ -38,13 +37,13 @@ public class Leg {
         // Create Display Entities
         this.entities = new ArrayList<>();
         for (int i = 0; i < segmentLengths.size(); i++) {
-            DisplayEntity.BlockDisplayEntity entity = new DisplayEntity.BlockDisplayEntity(EntityType.BLOCK_DISPLAY, world);
-            entity.setPosition(basePosition);
+            Display.BlockDisplay entity = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, world);
+            entity.setPos(basePosition);
             this.entities.add(entity);
-            world.spawnEntity(entity);
+            world.addFreshEntity(entity);
         }
 
-        this.setState(Blocks.GRAY_CONCRETE.getDefaultState());
+        this.setState(Blocks.GRAY_CONCRETE.defaultBlockState());
     }
 
     private BlockState state;
@@ -55,14 +54,14 @@ public class Leg {
 
     public void updateLegDisplayEntities() {
 
-        List<Vec3d> jointPositions = this.jointPositions;
+        List<Vec3> jointPositions = this.jointPositions;
 
         for (int i = 0; i < entities.size(); i++) {
-            Vec3d start = jointPositions.get(i);
-            Vec3d end = jointPositions.get(i + 1);
+            Vec3 start = jointPositions.get(i);
+            Vec3 end = jointPositions.get(i + 1);
 
             // Calculate direction vector and rotation
-            Vec3d direction = end.subtract(start);
+            Vec3 direction = end.subtract(start);
             Vector3f normalizedDirection = new Vector3f((float) direction.x, (float) direction.y, (float) direction.z);
             normalizedDirection.normalize();
 
@@ -75,7 +74,7 @@ public class Leg {
             Vector3f scale = new Vector3f(0.25f, (float) direction.length(), (float)0.25f);
 
             // Create the affine transformation
-            AffineTransformation transformation = new AffineTransformation(
+            Transformation transformation = new Transformation(
                     translation,
                     rotation, // Left rotation
                     scale,
@@ -84,10 +83,10 @@ public class Leg {
 
             // Apply transformation to the BlockDisplayEntity
             entities.get(i).setTransformation(transformation);
-            entities.get(i).setPosition(start);
+            entities.get(i).setPos(start);
             entities.get(i).setBlockState(state);
-            entities.get(i).setTeleportDuration(1);
-            entities.get(i).setInterpolationDuration(1);
+            entities.get(i).setPosRotInterpolationDuration(1);
+            entities.get(i).setTransformationInterpolationDuration(1);
         }
 
     }
