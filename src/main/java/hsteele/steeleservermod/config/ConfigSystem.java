@@ -1,18 +1,17 @@
 package hsteele.steeleservermod.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import hsteele.steeleservermod.Steeleservermod;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-
-
 public class ConfigSystem {
 
     private static final Path CONFIG_PATH = Path.of("config/steeleserverconfig.json");
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static ConfigData configData;
     private static boolean isLoaded = false;
 
@@ -25,7 +24,7 @@ public class ConfigSystem {
                 return;
             }
 
-            configData = MAPPER.readValue(Files.newBufferedReader(CONFIG_PATH), ConfigData.class);
+            configData = GSON.fromJson(Files.newBufferedReader(CONFIG_PATH), ConfigData.class);
             isLoaded = true;
         } catch (IOException e) {
             Steeleservermod.LOGGER.error(e.toString());
@@ -37,7 +36,7 @@ public class ConfigSystem {
         Steeleservermod.LOGGER.info("Saving Config");
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
-            MAPPER.writerWithDefaultPrettyPrinter().writeValue(CONFIG_PATH.toFile(), configData);
+            Files.writeString(CONFIG_PATH, GSON.toJson(configData));
         } catch (IOException e) {
             Steeleservermod.LOGGER.error(e.toString());
         }
