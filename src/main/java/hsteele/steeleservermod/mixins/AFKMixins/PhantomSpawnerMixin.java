@@ -1,14 +1,14 @@
 package hsteele.steeleservermod.mixins.AFKMixins;
 
 import hsteele.steeleservermod.AFKSystem.AFKManager;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.levelgen.PhantomSpawner;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.List;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.levelgen.PhantomSpawner;
 
 @Mixin(PhantomSpawner.class)
 public class PhantomSpawnerMixin {

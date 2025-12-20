@@ -1,16 +1,17 @@
 package hsteele.steeleservermod.WalkerSystem;
 
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 import com.mojang.math.Transformation;
-import java.util.ArrayList;
-import java.util.List;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Leg {
 
