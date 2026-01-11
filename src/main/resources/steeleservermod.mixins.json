@@ -5,9 +5,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "AFKMixins.PhantomSpawnerMixin",
-    "AFKMixins.SleepManagerMixin",
-    "ChristmasSystem.ServerWorldMixin",
-    "ChristmasSystem.SnowblockMixin"
+    "AFKMixins.SleepManagerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

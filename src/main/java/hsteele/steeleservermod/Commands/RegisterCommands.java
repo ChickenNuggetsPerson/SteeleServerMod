@@ -3,7 +3,6 @@ package hsteele.steeleservermod.Commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import hsteele.steeleservermod.AFKSystem.AFKCommand;
-import hsteele.steeleservermod.ChristmasSystem.ChristmasSystem;
 import hsteele.steeleservermod.HarvestSystem.HarvestSystemCommand;
 import hsteele.steeleservermod.StatisticsBook.StatisticsBookCommand;
 import hsteele.steeleservermod.Steeleservermod;
@@ -28,7 +27,6 @@ public class RegisterCommands {
             command.then(StatisticsBookCommand.register());
             command.then(HarvestSystemCommand.register());
             command.then(WalkerStorage.registerCommand());
-            command.then(ChristmasSystem.registerCommands());
 
             dispatcher.register(command);
         });
