@@ -332,13 +332,16 @@ public class Walker {
         // Set scale for the block
         Vector3f scale = new Vector3f(scaleX, scaleY, scaleZ);
 
+        // For some reason, you have to make a copy of the rotation
+        Quaternionf displayRotation = new Quaternionf(this.rotation);
+
         // Set translation relative to the base position
-        Vector3f translation = rotation.transform(new Vector3f(transformX, transformY, transformZ));
+        Vector3f translation = displayRotation.transform(new Vector3f(transformX, transformY, transformZ));
 
         // Create the affine transformation
         Transformation transformation = new Transformation(
                 translation,   // Translation
-                rotation.normalize(),  // Rotation quaternion
+                displayRotation,  // Rotation quaternion
                 scale,         // Scale
                 new Quaternionf() // No additional rotation applied
         );

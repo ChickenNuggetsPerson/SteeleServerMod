@@ -77,7 +77,7 @@ public class Leg {
             // Create the affine transformation
             Transformation transformation = new Transformation(
                     translation,
-                    rotation, // Left rotation
+                    rotation,
                     scale,
                     new Quaternionf() // No additional rotation applied
             );
