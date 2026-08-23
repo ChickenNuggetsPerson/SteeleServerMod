@@ -5,10 +5,14 @@ import hsteele.steeleservermod.config.ConfigSystem;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
 
@@ -61,6 +65,28 @@ public class AFKManager {
     }
 
     public static void tick(MinecraftServer server) {
+
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (isAFK(player)) {
+
+                double angleOffset = (double) System.currentTimeMillis() / 600;
+
+                for (double angle = 0; angle < Math.PI * 2; angle += 0.2) {
+                    if (Math.sin(angle + angleOffset) > 0.8 ) {
+                        double baseSize = .7;
+                        Vec3 basePos = player.position().add(
+                                Math.cos(angle) * baseSize,
+                                0.5 + Math.sin(2 * angle) * 0.2,
+                                Math.sin(angle) * baseSize
+                        );
+                        player.level().sendParticles(w, true, true, basePos.x(), basePos.y(), basePos.z(), 1, 0, 0, 0, 0);
+                    }
+
+                }
+
+            }
+        }
+
         if (server.getTickCount() % 20 != 0) { return; } // Only check once a second
 
         long now = System.currentTimeMillis();
@@ -150,4 +176,10 @@ public class AFKManager {
         }
     }
 
+
+
+
+
+    // Fun rendering stuff
+    private static final DustParticleOptions w = new DustParticleOptions(16777215, 0.6f);
 }

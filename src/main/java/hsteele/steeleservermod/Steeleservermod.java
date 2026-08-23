@@ -4,7 +4,6 @@ import hsteele.steeleservermod.AFKSystem.AFKManager;
 import hsteele.steeleservermod.Commands.RegisterCommands;
 import hsteele.steeleservermod.HarvestSystem.HarvestSystem;
 import hsteele.steeleservermod.ShutdownStickSystem.ShutdownStickSystem;
-import hsteele.steeleservermod.WalkerSystem.WalkerStorage;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +23,5 @@ public class Steeleservermod implements ModInitializer {
         HarvestSystem.register();
         ShutdownStickSystem.register();
 
-        WalkerStorage.register();
     }
 }

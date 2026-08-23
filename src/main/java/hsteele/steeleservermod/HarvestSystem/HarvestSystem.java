@@ -72,8 +72,8 @@ public class HarvestSystem {
                 List<ItemStack> items = Block.getDrops(block, serverWorld, checkPos, null, player, player.getItemInHand(hand));
 
                 for (ItemStack stack : items) {
-                    Vec3 center = checkPos.getCenter();
-                    Vec3 dir = pos.getCenter().subtract(checkPos.getCenter())
+                    Vec3 center = Vec3.atCenterOf(checkPos);
+                    Vec3 dir = Vec3.atCenterOf(pos).subtract(center)
                             .scale(0.1)
                             .add(0, 0.1, 0);
 

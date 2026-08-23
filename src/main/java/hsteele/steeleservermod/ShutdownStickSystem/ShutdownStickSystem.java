@@ -12,8 +12,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -218,18 +216,6 @@ public class ShutdownStickSystem {
                     8.5,
                     server.getLevel(explosionWorld.dimension())
             );
-        }
-
-
-        if (time > 3700) {
-            double spread = 4;
-            LightningBolt le = new LightningBolt(EntityType.LIGHTNING_BOLT, world);
-            le.setPos(explosionCenter.add(
-                    randomInRange(-spread, spread),
-                    randomInRange(-spread, spread),
-                    randomInRange(-spread, spread)
-            ));
-            world.addFreshEntity(le);
         }
 
         if (time > 4000) {
