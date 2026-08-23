@@ -26,6 +26,23 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Rename jar for ferium compatibility
+        run: |
+          cd build/libs
+          MC_VERSION=$(grep '^minecraft_version' ../../gradle.properties | cut -d'=' -f2 | tr -d ' ')
+          MOD_NAME=$(grep '^archives_base_name' ../../gradle.properties | cut -d'=' -f2 | tr -d ' ')
+          MOD_VERSION=${GITHUB_REF_NAME#v}
+
+          # drop sources/dev jars — only the shipped jar goes in the release
+          rm -f *-sources.jar *-dev.jar
+
+          for f in *.jar; do
+            mv "$f" "${MOD_NAME}-fabric-${MC_VERSION}-${MOD_VERSION}.jar"
+          done
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
